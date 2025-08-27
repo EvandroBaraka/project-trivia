@@ -1,0 +1,13 @@
+.container, .form {
+    display: flex;
+    flex-direction: column;
+
+}
+
+.form input {
+    margin-bottom: 15px;
+}
+
+#nome {
+    font-size: 1.3em;
+}
