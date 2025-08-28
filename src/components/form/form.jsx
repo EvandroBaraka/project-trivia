@@ -7,15 +7,14 @@ import ComboBox from "../combo-box/combo-box";
 import "./form.css";
 
 const Form = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm();
+  const { register, handleSubmit, reset } = useForm();
   const [trivia, setTrivia] = useState([]);
-  const [showQuestions, setShowQuestions] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [showQuestions, setShowQuestions] = useState(false);
+  const [result, setResult] = useState({
+    correct: 0,
+    show: false
+  });
 
   useEffect(() => {
         const fetchCategories = async () => {
@@ -23,8 +22,8 @@ const Form = () => {
                 const data = await getCategories();
                 if (data) {
                     const formattedCategories = data.map(category => ({
-                    value: category.id,
-                    label: category.name
+                      value: category.id,
+                      label: category.name
                     }));
                     formattedCategories.unshift({ value: '', label: 'Qualquer Categoria' });
 
@@ -43,8 +42,9 @@ const Form = () => {
 
   const handleSubmitForm = async (data) => {
     console.log(data);
-    if (data.nome) {
+    if (!showQuestions) {
       setShowQuestions(true);
+      setResult({ correct: 0, show: false });
 
       try {
         const triviaData = await getTrivia(data.amount, data.dificuldade, data.categoria);
@@ -61,8 +61,19 @@ const Form = () => {
         setTrivia([]);
         console.error("Erro ao buscar trivia:", error);
       }
-    } else {
-      console.log("Respostas: ", data);
+    } else if (showQuestions){
+        console.log("Respostas: ", data);
+        let correctCount = 0;
+        
+        trivia.forEach((item, index) => {
+          console.log(item);
+          if (data[`question_${index}`] === item.correct_answer) {
+            correctCount++;
+          }
+        });
+
+        setResult({ correct: correctCount, show: true });
+        console.log(`Você acertou ${correctCount} de ${trivia.length} perguntas.`);
     }
   };
 
@@ -76,19 +87,6 @@ const Form = () => {
         <form className="form" onSubmit={handleSubmit(handleSubmitForm)}>
           {!showQuestions ? (
             <>
-              <label htmlFor="nome" />
-              <input
-                type="text"
-                id="nome"
-                placeholder="Nome *"
-                {...register("nome", {
-                  required: "Digite seu nome",
-                })}
-              />
-              {errors.nome && (
-                <p className="mensagem-erro">{errors.nome.message}</p>
-              )}
-
               <ComboBox
                 label="Dificuldade"
                 name="dificuldade"
@@ -122,6 +120,14 @@ const Form = () => {
                   />
                 ))}
             </>
+          )}
+
+          {result.show && (
+            <div className="result">
+              <p>
+                Você acertou {result.correct} de {trivia.length} perguntas.
+              </p>
+            </div>
           )}
 
           <input
