@@ -1,4 +1,4 @@
-import "./question.css"
+import styled from "styled-components";
 
 const Question = ({question, incorrect_answers, correct_answer, register, index}) => {
     const decodeHtml = (html) => {
@@ -12,9 +12,9 @@ const Question = ({question, incorrect_answers, correct_answer, register, index}
 
 
     return (
-        <div className="trivia-question">
+        <StyledQuestion>
             <p className="question-text">{`${index + 1} - ${decodedQuestion}`}</p>
-            <div className="options">
+            <OptionsContainer>
                 {decodedAnswers
                     .sort(() => Math.random() - 0.5)
                     .map((answer, answerIndex) => (
@@ -27,9 +27,25 @@ const Question = ({question, incorrect_answers, correct_answer, register, index}
                             {answer}
                         </label>
                     ))}
-            </div>
-        </div>
+            </OptionsContainer>
+        </StyledQuestion>
     )
 }
+
+const StyledQuestion = styled.div`
+    padding: 5px 15px 15px;
+    border: 1px solid white;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 10px 0;
+`;
+
+const OptionsContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+`;
 
 export default Question

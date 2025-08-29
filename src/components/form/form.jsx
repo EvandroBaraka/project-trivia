@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import styled from "styled-components";
 import getTrivia from "../../scripts/requests/trivia_request";
 import getCategories from "../../scripts/requests/categories-request";
-import Question from "../question/question";
-import ComboBox from "../combo-box/combo-box";
-import "./form.css";
+import QuizInitialForm from "../quiz-initial-form/quiz-initial-form";
+import QuizQuestions from "../quiz-questions/quiz-questions";
+import QuizResults from "../quiz-results/quiz-results";
 
 const Form = () => {
   const { register, handleSubmit, reset } = useForm();
@@ -78,72 +79,64 @@ const Form = () => {
   };
 
   return (
-    <section className="container">
+    <StyledSection>
       <div className="header">
         <h1>Trivia</h1>
       </div>
 
       <div className="form-container">
-        <form className="form" onSubmit={handleSubmit(handleSubmitForm)}>
+        <StyledForm onSubmit={handleSubmit(handleSubmitForm)}>
           {!showQuestions ? (
-            <>
-              <ComboBox
-                label="Dificuldade"
-                name="dificuldade"
-                options={[
-                  { label: "Fácil", value: "easy" },
-                  { label: "Médio", value: "medium" },
-                  { label: "Difícil", value: "hard" },
-                ]}
-                register={register}
-              />
-
-              <ComboBox
-                label="Categoria"
-                name="categoria"
-                options={categories}
-                register={register}
-              />
-            </>
+            <QuizInitialForm categories={categories} register={register} />
           ) : (
-            <>
-              {Array.isArray(trivia) &&
-                trivia.length > 0 &&
-                trivia.map((item, index) => (
-                  <Question
-                    key={index}
-                    question={item.question}
-                    incorrect_answers={item.incorrect_answers}
-                    correct_answer={item.correct_answer}
-                    register={register}
-                    index={index}
-                  />
-                ))}
-            </>
+            <QuizQuestions trivia={trivia} register={register} />
           )}
 
           {result.show && (
-            <div className="result">
-              <p>
-                Você acertou {result.correct} de {trivia.length} perguntas.
-              </p>
-            </div>
+            <QuizResults trivia={trivia} result={result} />
           )}
 
-          <input
-            className="inputs"
+          <StyledSubmit
             type="submit"
-            id="btn-enviar"
             value={!showQuestions ? "Enviar" : "Finalizar Quiz"}
           />
 
           {showQuestions ? (
             <button onClick={() => reset()}>Limpar respostas</button>
           ) : null}
-        </form>
+        </StyledForm>
       </div>
-    </section>
+    </StyledSection>
   );
 };
+
+const StyledSubmit = styled.input`
+    width: 100px;
+    margin: 15px;
+    padding: 10px 20px;
+    align-self: center;
+    font-size: 1em;
+    background-color: #4CAF50;
+    color: white; 
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    &:hover {
+        background-color: #45a049;
+    }
+`;
+
+const StyledForm = styled.form `
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+`;
+
+const StyledSection = styled.section `
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`;
 
 export default Form;
