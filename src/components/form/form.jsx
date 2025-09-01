@@ -12,6 +12,7 @@ const Form = () => {
   const [trivia, setTrivia] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showQuestions, setShowQuestions] = useState(false);
+  const [answers, setAnswers] = useState({});
   const [result, setResult] = useState({
     correct: 0,
     show: false
@@ -42,7 +43,6 @@ const Form = () => {
     }, []);
 
   const handleSubmitForm = async (data) => {
-    console.log(data);
     if (!showQuestions) {
       setShowQuestions(true);
       setResult({ correct: 0, show: false });
@@ -50,9 +50,7 @@ const Form = () => {
       try {
         const triviaData = await getTrivia(data.amount, data.dificuldade, data.categoria);
         if (triviaData && triviaData.results) {
-          console.log(triviaData);
           setTrivia(triviaData.results);
-          console.log(triviaData.results);
           console.log("Trivia carregada com sucesso.");
         } else {
           setTrivia([]);
@@ -62,17 +60,22 @@ const Form = () => {
         setTrivia([]);
         console.error("Erro ao buscar trivia:", error);
       }
-    } else if (showQuestions){
-        console.log("Respostas: ", data);
+    } else if (showQuestions && result.show === false) {
         let correctCount = 0;
+        const newAnswers = {};
         
         trivia.forEach((item, index) => {
-          console.log(item);
           if (data[`question_${index}`] === item.correct_answer) {
             correctCount++;
+            newAnswers[`question_${index}`] = true;
+            console.log(data[`question_${index}`], item.correct_answer, " - Correto");
+          } else {
+            newAnswers[`question_${index}`] = false;
+            console.log(data[`question_${index}`], item.correct_answer, " - Incorreto");
           }
         });
 
+        setAnswers(newAnswers);
         setResult({ correct: correctCount, show: true });
         console.log(`Você acertou ${correctCount} de ${trivia.length} perguntas.`);
     }
@@ -89,7 +92,7 @@ const Form = () => {
           {!showQuestions ? (
             <QuizInitialForm categories={categories} register={register} />
           ) : (
-            <QuizQuestions trivia={trivia} register={register} />
+            <QuizQuestions trivia={trivia} selectedAnswer={answers} showResult={result.show} register={register} />
           )}
 
           {result.show && (
@@ -111,7 +114,7 @@ const Form = () => {
 };
 
 const StyledSubmit = styled.input`
-    width: 100px;
+    width: 150px;
     margin: 15px;
     padding: 10px 20px;
     align-self: center;

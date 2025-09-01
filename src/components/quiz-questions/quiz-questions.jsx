@@ -1,6 +1,6 @@
 import Question from "../question/question";
 
-const QuizQuestions = ({ trivia, register }) => {
+const QuizQuestions = ({ trivia, showResult, selectedAnswer, register }) => {
     return (
         <>
             {Array.isArray(trivia) &&
@@ -11,6 +11,8 @@ const QuizQuestions = ({ trivia, register }) => {
                     question={item.question}
                     incorrect_answers={item.incorrect_answers}
                     correct_answer={item.correct_answer}
+                    selectedAnswer={selectedAnswer[`question_${index}`]}
+                    showResult={showResult}
                     register={register}
                     index={index}
                 />

@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-const Question = ({question, incorrect_answers, correct_answer, register, index}) => {
+const Question = ({question, incorrect_answers, correct_answer, selectedAnswer, showResult, register, index}) => {
     const decodeHtml = (html) => {
         var txt = document.createElement("textarea");
         txt.innerHTML = html;
@@ -10,9 +10,8 @@ const Question = ({question, incorrect_answers, correct_answer, register, index}
     const decodedQuestion = decodeHtml(question);
     const decodedAnswers = [...incorrect_answers, correct_answer].map(answer => decodeHtml(answer));
 
-
     return (
-        <StyledQuestion>
+        <StyledQuestion className={showResult ? (selectedAnswer ? "correct" : "incorrect") : ""}>
             <p className="question-text">{`${index + 1} - ${decodedQuestion}`}</p>
             <OptionsContainer>
                 {decodedAnswers
@@ -40,6 +39,14 @@ const StyledQuestion = styled.div`
     flex-direction: column;
     align-items: flex-start;
     margin: 10px 0;
+
+    &.correct {
+        border-color: #4CAF50;
+    }
+
+    &.incorrect {
+        border-color: #F44336;
+    }
 `;
 
 const OptionsContainer = styled.div`
