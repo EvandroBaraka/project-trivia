@@ -50,7 +50,14 @@ const Form = () => {
       try {
         const triviaData = await getTrivia(data.amount, data.dificuldade, data.categoria);
         if (triviaData && triviaData.results) {
-          setTrivia(triviaData.results);
+          const shuffledTrivia = triviaData.results.map(item => {
+            const allAnswers = [...item.incorrect_answers, item.correct_answer];
+            const shuffledAnswers = allAnswers.sort(() => Math.random() - 0.5);
+            
+            return { ...item, shuffled_answers: shuffledAnswers };
+          });
+
+          setTrivia(shuffledTrivia);
           console.log("Trivia carregada com sucesso.");
         } else {
           setTrivia([]);

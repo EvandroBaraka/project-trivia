@@ -9,7 +9,7 @@ const QuizQuestions = ({ trivia, showResult, selectedAnswer, register }) => {
                 <Question
                     key={index}
                     question={item.question}
-                    incorrect_answers={item.incorrect_answers}
+                    shuffled_answers={item.shuffled_answers}
                     correct_answer={item.correct_answer}
                     selectedAnswer={selectedAnswer[`question_${index}`]}
                     showResult={showResult}
