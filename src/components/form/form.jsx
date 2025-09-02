@@ -106,10 +106,21 @@ const Form = () => {
             <QuizResults trivia={trivia} result={result} />
           )}
 
-          <StyledSubmit
+          {!result.show ? (
+            <StyledSubmit
             type="submit"
             value={!showQuestions ? "Enviar" : "Finalizar Quiz"}
-          />
+            />
+          ) : (
+            <StyledButton onClick={() => { 
+              setShowQuestions(false); 
+              setAnswers({}); 
+              setTrivia([]); 
+              setResult({ correct: 0, show: false }); 
+              reset(); } }>
+                Jogar novamente
+            </StyledButton>
+          )}
 
           {showQuestions ? (
             <button onClick={() => reset()}>Limpar respostas</button>
@@ -121,6 +132,22 @@ const Form = () => {
 };
 
 const StyledSubmit = styled.input`
+    width: 150px;
+    margin: 15px;
+    padding: 10px 20px;
+    align-self: center;
+    font-size: 1em;
+    background-color: #4CAF50;
+    color: white; 
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    &:hover {
+        background-color: #45a049;
+    }
+`;
+
+const StyledButton = styled.button`
     width: 150px;
     margin: 15px;
     padding: 10px 20px;
