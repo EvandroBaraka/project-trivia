@@ -112,7 +112,7 @@ const Form = () => {
             value={!showQuestions ? "Enviar" : "Finalizar Quiz"}
             />
           ) : (
-            <StyledButton onClick={() => { 
+            <StyledButton primary onClick={() => { 
               setShowQuestions(false); 
               setAnswers({}); 
               setTrivia([]); 
@@ -123,7 +123,7 @@ const Form = () => {
           )}
 
           {showQuestions ? (
-            <button onClick={() => reset()}>Limpar respostas</button>
+            <StyledButton onClick={() => reset()}>Limpar respostas</StyledButton>
           ) : null}
         </StyledForm>
       </div>
@@ -153,13 +153,13 @@ const StyledButton = styled.button`
     padding: 10px 20px;
     align-self: center;
     font-size: 1em;
-    background-color: #4CAF50;
+    background-color: ${props => props.primary ? '#4CAF50' : '#c71212'};
     color: white; 
     border: none;
     border-radius: 5px;
     cursor: pointer;
     &:hover {
-        background-color: #45a049;
+        background-color: ${props => props.primary ? '#45a049' : '#a50f0f'};
     }
 `;
 

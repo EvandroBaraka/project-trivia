@@ -20,6 +20,22 @@ const QuizInitialForm = ({ categories, register }) => {
                 options={categories}
                 register={register}
             />
+
+            <div>
+                <label htmlFor="amount">Quantidade de perguntas: </label>
+                <input
+                    label="Quantidade de perguntas"
+                    type="number"
+                    min="1"
+                    max="50"
+                    defaultValue="10"
+                    {...register("amount", {
+                        required: "Defina a quantidade de perguntas",
+                        min: { value: 1, message: "Mínimo 1 pergunta" },
+                        max: { value: 50, message: "Máximo 50 perguntas" },
+                    })}
+                />
+            </div>
         </>
     );
 };
