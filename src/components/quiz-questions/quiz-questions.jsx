@@ -8,7 +8,7 @@ const QuizQuestions = ({ trivia, showResult, selectedAnswer, register }) => {
             trivia.map((item, index) => (
                 <Question
                     key={index}
-                    question={item.question}
+                    question={item.decoded_question}
                     shuffled_answers={item.shuffled_answers}
                     correct_answer={item.correct_answer}
                     selectedAnswer={selectedAnswer[`question_${index}`]}

@@ -7,6 +7,14 @@ import QuizInitialForm from "../quiz-initial-form/quiz-initial-form";
 import QuizQuestions from "../quiz-questions/quiz-questions";
 import QuizResults from "../quiz-results/quiz-results";
 
+
+const decodeHtml = (html) => {
+  var txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
+}
+
+
 const Form = () => {
   const { register, handleSubmit, reset } = useForm();
   const [trivia, setTrivia] = useState([]);
@@ -46,17 +54,21 @@ const Form = () => {
     if (!showQuestions) {
       setShowQuestions(true);
       setResult({ correct: 0, show: false });
-
+      
       try {
         const triviaData = await getTrivia(data.amount, data.dificuldade, data.categoria);
         if (triviaData && triviaData.results) {
+
           const shuffledTrivia = triviaData.results.map(item => {
             const allAnswers = [...item.incorrect_answers, item.correct_answer];
-            const shuffledAnswers = allAnswers.sort(() => Math.random() - 0.5);
+            const decodedQuestion = decodeHtml(item.question);
+            const decodedAnswers = allAnswers.map(answer => decodeHtml(answer));
             
-            return { ...item, shuffled_answers: shuffledAnswers };
-          });
+            const shuffledAnswers = decodedAnswers.sort(() => Math.random() - 0.5);
 
+            return { ...item, decoded_question: decodedQuestion, shuffled_answers: shuffledAnswers };
+          });
+          
           setTrivia(shuffledTrivia);
           console.log("Trivia carregada com sucesso.");
         } else {
@@ -72,19 +84,20 @@ const Form = () => {
         const newAnswers = {};
         
         trivia.forEach((item, index) => {
-          if (data[`question_${index}`] === item.correct_answer) {
+          const decodedCorrectAnswer = decodeHtml(item.correct_answer);
+
+          if (data[`question_${index}`] === decodedCorrectAnswer) {
             correctCount++;
             newAnswers[`question_${index}`] = true;
-            console.log(data[`question_${index}`], item.correct_answer, " - Correto");
+            console.log(data[`question_${index}`], decodedCorrectAnswer, " - Correto");
           } else {
             newAnswers[`question_${index}`] = false;
-            console.log(data[`question_${index}`], item.correct_answer, " - Incorreto");
+            console.log(data[`question_${index}`], decodedCorrectAnswer, " - Incorreto");
           }
         });
 
         setAnswers(newAnswers);
         setResult({ correct: correctCount, show: true });
-        console.log(`Você acertou ${correctCount} de ${trivia.length} perguntas.`);
     }
   };
 

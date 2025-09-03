@@ -1,20 +1,11 @@
 import styled from "styled-components";
 
-const Question = ({question, shuffled_answers, correct_answer, selectedAnswer, showResult, register, index}) => {
-    const decodeHtml = (html) => {
-        var txt = document.createElement("textarea");
-        txt.innerHTML = html;
-        return txt.value;
-    }
-
-    const decodedQuestion = decodeHtml(question);
-    const decodedAnswers = shuffled_answers.map(answer => decodeHtml(answer));
-
+const Question = ({question, shuffled_answers, selectedAnswer, showResult, register, index}) => {
     return (
         <StyledQuestion className={showResult ? (selectedAnswer ? "correct" : "incorrect") : ""}>
-            <p className="question-text">{`${index + 1} - ${decodedQuestion}`}</p>
+            <p className="question-text">{`${index + 1} - ${question}`}</p>
             <OptionsContainer>
-                {decodedAnswers
+                {shuffled_answers
                     .map((answer, answerIndex) => (
                         <label key={answerIndex} className="option-label">
                             <input 
