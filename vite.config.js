@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/project-trivia/',
   plugins: [react()],
+  server: { port: 3000 },
   build: {
     outDir: 'dist'
   }
