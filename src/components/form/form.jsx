@@ -1,147 +1,163 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import styled from "styled-components";
 import getTrivia from "../../scripts/requests/trivia_request";
-import getCategories from "../../scripts/requests/categories-request";
+import { useCategories } from "../../hooks/useCategories";
 import QuizInitialForm from "../quiz-initial-form/quiz-initial-form";
 import QuizQuestions from "../quiz-questions/quiz-questions";
 import QuizResults from "../quiz-results/quiz-results";
 
-
 const decodeHtml = (html) => {
-  var txt = document.createElement("textarea");
-  txt.innerHTML = html;
-  return txt.value;
-}
-
+    var txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+};
 
 const Form = () => {
-  const { register, handleSubmit, reset } = useForm();
-  const [trivia, setTrivia] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [showQuestions, setShowQuestions] = useState(false);
-  const [answers, setAnswers] = useState({});
-  const [result, setResult] = useState({
-    correct: 0,
-    show: false
-  });
+    const { register, handleSubmit, reset } = useForm();
+    const [trivia, setTrivia] = useState([]);
+    const { data: categories, isLoading: isCategoriesLoading, error: categoriesError } = useCategories();
+    const [showQuestions, setShowQuestions] = useState(false);
+    const [answers, setAnswers] = useState({});
+    const [result, setResult] = useState({
+        correct: 0,
+        show: false,
+    });
 
-  useEffect(() => {
-        const fetchCategories = async () => {
+    const handleSubmitForm = async (data) => {
+        if (!showQuestions) {
+            setShowQuestions(true);
+            setResult({ correct: 0, show: false });
+
             try {
-                const data = await getCategories();
-                if (data) {
-                    const formattedCategories = data.map(category => ({
-                      value: category.id,
-                      label: category.name
-                    }));
-                    formattedCategories.unshift({ value: '', label: 'Qualquer Categoria' });
+                const triviaData = await getTrivia(
+                    data.amount,
+                    data.dificuldade,
+                    data.categoria
+                );
+                if (triviaData && triviaData.results) {
+                    const shuffledTrivia = triviaData.results.map((item) => {
+                        const allAnswers = [
+                            ...item.incorrect_answers,
+                            item.correct_answer,
+                        ];
+                        const decodedQuestion = decodeHtml(item.question);
+                        const decodedAnswers = allAnswers.map((answer) =>
+                            decodeHtml(answer)
+                        );
 
-                    setCategories(formattedCategories);
-                    console.log("Categorias carregadas com sucesso.");
+                        const shuffledAnswers = decodedAnswers.sort(
+                            () => Math.random() - 0.5
+                        );
+
+                        return {
+                            ...item,
+                            decoded_question: decodedQuestion,
+                            shuffled_answers: shuffledAnswers,
+                        };
+                    });
+
+                    setTrivia(shuffledTrivia);
+                    console.log("Trivia carregada com sucesso.");
                 } else {
-                    console.log("Categorias não encontradas.");
+                    setTrivia([]);
+                    console.log("Trivia não encontrada ou formato inválido.");
                 }
             } catch (error) {
-                console.error("Erro ao buscar categorias:", error);
+                setTrivia([]);
+                console.error("Erro ao buscar trivia:", error);
             }
-        };
+        } else if (showQuestions && result.show === false) {
+            let correctCount = 0;
+            const newAnswers = {};
 
-        fetchCategories();
-    }, []);
+            trivia.forEach((item, index) => {
+                const decodedCorrectAnswer = decodeHtml(item.correct_answer);
 
-  const handleSubmitForm = async (data) => {
-    if (!showQuestions) {
-      setShowQuestions(true);
-      setResult({ correct: 0, show: false });
-      
-      try {
-        const triviaData = await getTrivia(data.amount, data.dificuldade, data.categoria);
-        if (triviaData && triviaData.results) {
+                if (data[`question_${index}`] === decodedCorrectAnswer) {
+                    correctCount++;
+                    newAnswers[`question_${index}`] = true;
+                    console.log(
+                        data[`question_${index}`],
+                        decodedCorrectAnswer,
+                        " - Correto"
+                    );
+                } else {
+                    newAnswers[`question_${index}`] = false;
+                    console.log(
+                        data[`question_${index}`],
+                        decodedCorrectAnswer,
+                        " - Incorreto"
+                    );
+                }
+            });
 
-          const shuffledTrivia = triviaData.results.map(item => {
-            const allAnswers = [...item.incorrect_answers, item.correct_answer];
-            const decodedQuestion = decodeHtml(item.question);
-            const decodedAnswers = allAnswers.map(answer => decodeHtml(answer));
-            
-            const shuffledAnswers = decodedAnswers.sort(() => Math.random() - 0.5);
-
-            return { ...item, decoded_question: decodedQuestion, shuffled_answers: shuffledAnswers };
-          });
-          
-          setTrivia(shuffledTrivia);
-          console.log("Trivia carregada com sucesso.");
-        } else {
-          setTrivia([]);
-          console.log("Trivia não encontrada ou formato inválido.");
+            setAnswers(newAnswers);
+            setResult({ correct: correctCount, show: true });
         }
-      } catch (error) {
-        setTrivia([]);
-        console.error("Erro ao buscar trivia:", error);
-      }
-    } else if (showQuestions && result.show === false) {
-        let correctCount = 0;
-        const newAnswers = {};
-        
-        trivia.forEach((item, index) => {
-          const decodedCorrectAnswer = decodeHtml(item.correct_answer);
+    };
 
-          if (data[`question_${index}`] === decodedCorrectAnswer) {
-            correctCount++;
-            newAnswers[`question_${index}`] = true;
-            console.log(data[`question_${index}`], decodedCorrectAnswer, " - Correto");
-          } else {
-            newAnswers[`question_${index}`] = false;
-            console.log(data[`question_${index}`], decodedCorrectAnswer, " - Incorreto");
-          }
-        });
+    return (
+        <StyledSection>
+            <div className="header">
+                <h1>Trivia</h1>
+            </div>
 
-        setAnswers(newAnswers);
-        setResult({ correct: correctCount, show: true });
-    }
-  };
+            <div className="form-container">
+                <StyledForm onSubmit={handleSubmit(handleSubmitForm)}>
+                    {!showQuestions ? (
+                        isCategoriesLoading ? (
+                            <p>Carregando...</p>
+                        ) : categoriesError ? (
+                            <p>Erro ao carregar categorias.</p>
+                        ) : (
+                            <QuizInitialForm
+                                categories={categories}
+                                register={register}
+                            />
+                        )
+                    ) : (
+                        <QuizQuestions
+                            trivia={trivia}
+                            selectedAnswer={answers}
+                            showResult={result.show}
+                            register={register}
+                        />
+                    )}
 
-  return (
-    <StyledSection>
-      <div className="header">
-        <h1>Trivia</h1>
-      </div>
+                    {result.show && (
+                        <QuizResults trivia={trivia} result={result} />
+                    )}
 
-      <div className="form-container">
-        <StyledForm onSubmit={handleSubmit(handleSubmitForm)}>
-          {!showQuestions ? (
-            <QuizInitialForm categories={categories} register={register} />
-          ) : (
-            <QuizQuestions trivia={trivia} selectedAnswer={answers} showResult={result.show} register={register} />
-          )}
+                    {!result.show ? (
+                        <StyledSubmit
+                            type="submit"
+                            value={!showQuestions ? "Enviar" : "Finalizar Quiz"}
+                        />
+                    ) : (
+                        <StyledButton
+                            primary
+                            onClick={() => {
+                                setShowQuestions(false);
+                                setAnswers({});
+                                setTrivia([]);
+                                setResult({ correct: 0, show: false });
+                                reset();
+                            }}
+                        >
+                            Jogar novamente
+                        </StyledButton>
+                    )}
 
-          {result.show && (
-            <QuizResults trivia={trivia} result={result} />
-          )}
-
-          {!result.show ? (
-            <StyledSubmit
-            type="submit"
-            value={!showQuestions ? "Enviar" : "Finalizar Quiz"}
-            />
-          ) : (
-            <StyledButton primary onClick={() => { 
-              setShowQuestions(false); 
-              setAnswers({}); 
-              setTrivia([]); 
-              setResult({ correct: 0, show: false }); 
-              reset(); } }>
-                Jogar novamente
-            </StyledButton>
-          )}
-
-          {showQuestions ? (
-            <StyledButton onClick={() => reset()}>Limpar respostas</StyledButton>
-          ) : null}
-        </StyledForm>
-      </div>
-    </StyledSection>
-  );
+                    {showQuestions ? (
+                        <StyledButton onClick={() => reset()}>
+                            Limpar respostas
+                        </StyledButton>
+                    ) : null}
+                </StyledForm>
+            </div>
+        </StyledSection>
+    );
 };
 
 const StyledSubmit = styled.input`
@@ -150,8 +166,8 @@ const StyledSubmit = styled.input`
     padding: 10px 20px;
     align-self: center;
     font-size: 1em;
-    background-color: #4CAF50;
-    color: white; 
+    background-color: #4caf50;
+    color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -166,24 +182,24 @@ const StyledButton = styled.button`
     padding: 10px 20px;
     align-self: center;
     font-size: 1em;
-    background-color: ${props => props.primary ? '#4CAF50' : '#c71212'};
-    color: white; 
+    background-color: ${(props) => (props.primary ? "#4CAF50" : "#c71212")};
+    color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
     &:hover {
-        background-color: ${props => props.primary ? '#45a049' : '#a50f0f'};
+        background-color: ${(props) => (props.primary ? "#45a049" : "#a50f0f")};
     }
 `;
 
-const StyledForm = styled.form `
+const StyledForm = styled.form`
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 20px;
 `;
 
-const StyledSection = styled.section `
+const StyledSection = styled.section`
     display: flex;
     flex-direction: column;
     align-items: center;

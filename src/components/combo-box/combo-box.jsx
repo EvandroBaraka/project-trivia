@@ -4,8 +4,8 @@ const ComboBox = ({ label, name, options, register }) => {
             <label htmlFor={name}>{label}: </label>
             <select id={name} {...register(name)} >
                 {options.map((option, index) => (
-                    <option key={index} value={option.value}>
-                        {option.label}
+                    <option key={index} value={option.id}>
+                        {option.name}
                     </option>
                 ))}
             </select>

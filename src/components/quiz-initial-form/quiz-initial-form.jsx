@@ -7,9 +7,9 @@ const QuizInitialForm = ({ categories, register }) => {
                 label="Dificuldade"
                 name="dificuldade"
                 options={[
-                    { label: "Fácil", value: "easy" },
-                    { label: "Médio", value: "medium" },
-                    { label: "Difícil", value: "hard" },
+                    { name: "Fácil", id: "easy" },
+                    { name: "Médio", id: "medium" },
+                    { name: "Difícil", id: "hard" },
                 ]}
                 register={register}
             />
