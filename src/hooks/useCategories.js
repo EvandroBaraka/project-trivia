@@ -16,8 +16,6 @@ export function useCategories(){
         queryFn: getCategories,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
+        staleTime: Infinity,
     })
 }
-
-
-export default getCategories

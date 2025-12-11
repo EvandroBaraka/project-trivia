@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import styled from "styled-components";
-import getTrivia from "../../scripts/requests/trivia_request";
 import { useCategories } from "../../hooks/useCategories";
+import { useTrivia } from "../../hooks/useTrivia";
 import QuizInitialForm from "../quiz-initial-form/quiz-initial-form";
 import QuizQuestions from "../quiz-questions/quiz-questions";
 import QuizResults from "../quiz-results/quiz-results";
@@ -15,8 +15,13 @@ const decodeHtml = (html) => {
 
 const Form = () => {
     const { register, handleSubmit, reset } = useForm();
+    const [quizParams, setQuizParams] = useState(null);
     const [trivia, setTrivia] = useState([]);
-    const { data: categories, isLoading: isCategoriesLoading, error: categoriesError } = useCategories();
+    const {
+        data: categories,
+        isLoading: isCategoriesLoading,
+        error: categoriesError,
+    } = useCategories();
     const [showQuestions, setShowQuestions] = useState(false);
     const [answers, setAnswers] = useState({});
     const [result, setResult] = useState({
@@ -24,49 +29,57 @@ const Form = () => {
         show: false,
     });
 
+    const {
+        data: triviaData,
+        isLoading: isTriviaLoading,
+        error: triviaError,
+    } = useTrivia(
+        quizParams?.amount,
+        quizParams?.dificuldade,
+        quizParams?.categoria,
+        quizParams?.gameId,
+        !!quizParams,
+    );
+
+    // EFEITO PARA PROCESSAR OS DADOS (Embaralhar e Decodificar)
+    // Roda automaticamente quando 'triviaData' chega da API
+    useEffect(() => {
+        if (triviaData && triviaData.results) {
+            const shuffledTrivia = triviaData.results.map((item) => {
+                const allAnswers = [
+                    ...item.incorrect_answers,
+                    item.correct_answer,
+                ];
+                const decodedQuestion = decodeHtml(item.question);
+                const decodedAnswers = allAnswers.map((answer) =>
+                    decodeHtml(answer)
+                );
+
+                const shuffledAnswers = decodedAnswers.sort(
+                    () => Math.random() - 0.5
+                );
+
+                return {
+                    ...item,
+                    decoded_question: decodedQuestion,
+                    shuffled_answers: shuffledAnswers,
+                };
+            });
+            setTrivia(shuffledTrivia);
+        }
+    }, [triviaData]);
+
     const handleSubmitForm = async (data) => {
         if (!showQuestions) {
             setShowQuestions(true);
             setResult({ correct: 0, show: false });
 
-            try {
-                const triviaData = await getTrivia(
-                    data.amount,
-                    data.dificuldade,
-                    data.categoria
-                );
-                if (triviaData && triviaData.results) {
-                    const shuffledTrivia = triviaData.results.map((item) => {
-                        const allAnswers = [
-                            ...item.incorrect_answers,
-                            item.correct_answer,
-                        ];
-                        const decodedQuestion = decodeHtml(item.question);
-                        const decodedAnswers = allAnswers.map((answer) =>
-                            decodeHtml(answer)
-                        );
-
-                        const shuffledAnswers = decodedAnswers.sort(
-                            () => Math.random() - 0.5
-                        );
-
-                        return {
-                            ...item,
-                            decoded_question: decodedQuestion,
-                            shuffled_answers: shuffledAnswers,
-                        };
-                    });
-
-                    setTrivia(shuffledTrivia);
-                    console.log("Trivia carregada com sucesso.");
-                } else {
-                    setTrivia([]);
-                    console.log("Trivia não encontrada ou formato inválido.");
-                }
-            } catch (error) {
-                setTrivia([]);
-                console.error("Erro ao buscar trivia:", error);
-            }
+            setQuizParams({
+                amount: data.amount,
+                dificuldade: data.dificuldade,
+                categoria: data.categoria,
+                gameId: Date.now(),
+            });
         } else if (showQuestions && result.show === false) {
             let correctCount = 0;
             const newAnswers = {};
@@ -77,24 +90,23 @@ const Form = () => {
                 if (data[`question_${index}`] === decodedCorrectAnswer) {
                     correctCount++;
                     newAnswers[`question_${index}`] = true;
-                    console.log(
-                        data[`question_${index}`],
-                        decodedCorrectAnswer,
-                        " - Correto"
-                    );
                 } else {
                     newAnswers[`question_${index}`] = false;
-                    console.log(
-                        data[`question_${index}`],
-                        decodedCorrectAnswer,
-                        " - Incorreto"
-                    );
                 }
             });
 
             setAnswers(newAnswers);
             setResult({ correct: correctCount, show: true });
         }
+    };
+
+    const handleReset = () => {
+        setShowQuestions(false);
+        setAnswers({});
+        setTrivia([]);
+        setQuizParams(null); // Reseta os parametros para parar o hook
+        setResult({ correct: 0, show: false });
+        reset();
     };
 
     return (
@@ -116,6 +128,15 @@ const Form = () => {
                                 register={register}
                             />
                         )
+                    ) : isTriviaLoading ? (
+                        <p>Carregando perguntas...</p>
+                    ) : triviaError ? (
+                        <div>
+                            <p>Erro ao buscar perguntas. Tente novamente.</p>
+                            <StyledButton onClick={handleReset}>
+                                Voltar
+                            </StyledButton>
+                        </div>
                     ) : (
                         <QuizQuestions
                             trivia={trivia}
@@ -125,35 +146,34 @@ const Form = () => {
                         />
                     )}
 
-                    {result.show && (
-                        <QuizResults trivia={trivia} result={result} />
-                    )}
+                    {!isTriviaLoading && !triviaError && (
+                        <div>
+                            {result.show && (
+                                <QuizResults trivia={trivia} result={result} />
+                            )}
 
-                    {!result.show ? (
-                        <StyledSubmit
-                            type="submit"
-                            value={!showQuestions ? "Enviar" : "Finalizar Quiz"}
-                        />
-                    ) : (
-                        <StyledButton
-                            primary
-                            onClick={() => {
-                                setShowQuestions(false);
-                                setAnswers({});
-                                setTrivia([]);
-                                setResult({ correct: 0, show: false });
-                                reset();
-                            }}
-                        >
-                            Jogar novamente
-                        </StyledButton>
-                    )}
+                            {!result.show ? (
+                                <StyledSubmit
+                                    type="submit"
+                                    value={!showQuestions ? "Enviar" : "Finalizar Quiz"}
+                                />
+                            ) : (
+                                <StyledButton
+                                    primary
+                                    onClick={handleReset} // Usa a nova função de reset
+                                    type="button" // Importante para não submeter form
+                                >
+                                    Jogar novamente
+                                </StyledButton>
+                            )}
 
-                    {showQuestions ? (
-                        <StyledButton onClick={() => reset()}>
-                            Limpar respostas
-                        </StyledButton>
-                    ) : null}
+                            {showQuestions ? (
+                                <StyledButton type="button" onClick={() => reset()}>
+                                    Limpar respostas
+                                </StyledButton>
+                            ) : null}
+                        </div>
+                    )}
                 </StyledForm>
             </div>
         </StyledSection>
